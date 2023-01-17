@@ -1,5 +1,5 @@
 import "./App.css";
-import React, { useState, useEffect } from "react";
+import React, { useState /* useEffect */ } from "react";
 
 // ### item model ###
 // {
@@ -74,6 +74,15 @@ function Header() {
 function InputBox(props) {
   const [text, setText] = useState("");
 
+  const completeAll = () => {
+    props.setTodoList(
+      props.todoList.map((el) => {
+        el.checked = true;
+        return el;
+      })
+    );
+  };
+
   const onChange = (e) => {
     setText(e.target.value);
   };
@@ -93,7 +102,9 @@ function InputBox(props) {
 
   return (
     <div className="flex items-center px-4">
-      <IcoCheckCircle width="32" height="32" fill="#333" />
+      <button onClick={completeAll}>
+        <IcoCheckCircle width="32" height="32" fill="#333" />
+      </button>
       <input className="w-full h-16 px-6 py-2" onChange={onChange} value={text} onKeyDown={handleKeyDown} />
     </div>
   );
@@ -101,10 +112,21 @@ function InputBox(props) {
 
 function Item(props) {
   const id = props.id;
+  const toggleCheck = () => {
+    return props.setTodoList(
+      props.todoList.map((el) => {
+        if (el.id === id) el.checked = !el.checked;
+        return el;
+      })
+    );
+  };
+  const deleteItem = (id) => {
+    return props.setTodoList(props.todoList.filter((el) => el.id !== id && el));
+  };
 
   return (
     <li className="item flex items-center h-16 px-4 py-2 border-t border-slate-200">
-      <button>
+      <button onClick={toggleCheck}>
         {props.checked ? (
           <IcoCheckCircle width="32" height="32" fill="#333" />
         ) : (
@@ -112,37 +134,85 @@ function Item(props) {
         )}
       </button>
       <span className="ml-4">{props.text}</span>
-      <button className="ml-auto">
+      <button
+        className="ml-auto"
+        onClick={() => {
+          deleteItem(id);
+        }}
+      >
         <IcoDelete width="24" height="24" fill="#999" />
       </button>
     </li>
   );
 }
 
-function List({ todoList, setTodoList }) {
+function List({ todoList, setTodoList, filteredTodoList }) {
   return (
     <ul className="list_wrapper">
       {todoList && //is todoList
-        todoList.map((item) => <Item id={item.id} text={item.text} checked={item.checked} key={item.id} />)}
+        filteredTodoList.map(
+          (item) =>
+            item && (
+              <Item
+                id={item.id}
+                text={item.text}
+                checked={item.checked}
+                todoList={todoList}
+                setTodoList={setTodoList}
+                key={item.id}
+              />
+            )
+        )}
     </ul>
   );
 }
 
 function Footer(props) {
-  <div className="footer h-16 flex justify-center items-center">
-    <div className="button_01 mr-4">button</div>
-    <div className="button_02 mr-4">button</div>
-    <div className="button_03">button</div>
-  </div>;
+  return (
+    props.todoList.length > 0 && (
+      <div className="footer relative h-16">
+        <div className="absolute w-full px-6 py-2 flex justify-center items-center">
+          <span className="txt mr-auto">{`${props.todoList.length} items left`}</span>
+          <div
+            className={`button_01 mr-2 px-4 py-2 border rounded cursor-pointer ${
+              props.whichFilter === "all" ? "border-blue-600 text-blue-600" : "border-gray-500 text-gray-500"
+            }`}
+            onClick={() => {
+              props.setWhichFilter("all");
+            }}
+          >
+            전체
+          </div>
+          <div
+            className={`button_02 mr-2 px-4 py-2 border rounded cursor-pointer ${
+              props.whichFilter === "todo" ? "border-blue-600 text-blue-600" : "border-gray-500 text-gray-500"
+            }`}
+            onClick={() => props.setWhichFilter("todo")}
+          >
+            할 일
+          </div>
+          <div
+            className={`button_03 px-4 py-2 border rounded cursor-pointer ${
+              props.whichFilter === "completed" ? "border-blue-600 text-blue-600" : "border-gray-500 text-gray-500"
+            }`}
+            onClick={() => props.setWhichFilter("completed")}
+          >
+            완료
+          </div>
+        </div>
+      </div>
+    )
+  );
 }
 
 function App() {
+  const [whichFilter, setWhichFilter] = useState("all");
   const [todoList, setTodoList] = useState([]);
-
-  useEffect(() => {
-    // todoList가 변했을때만 실행
-    console.log(todoList);
-  }, [todoList]);
+  const filteredTodoList = (type) => {
+    if (type === "todo") return todoList.map((el) => !el.checked && el);
+    else if (type === "completed") return todoList.map((el) => el.checked && el);
+    else return todoList;
+  };
 
   return (
     <div className="App min-h-screen bg-slate-100">
@@ -150,8 +220,8 @@ function App() {
         <Header />
         <div className="bg-white drop-shadow-lg">
           <InputBox todoList={todoList} setTodoList={setTodoList} />
-          <List todoList={todoList} setTodoList={setTodoList} />
-          <Footer />
+          <List todoList={todoList} setTodoList={setTodoList} filteredTodoList={filteredTodoList(whichFilter)} />
+          <Footer todoList={todoList} whichFilter={whichFilter} setWhichFilter={setWhichFilter} />
         </div>
       </div>
     </div>
