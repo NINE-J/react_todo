@@ -92,7 +92,11 @@ function InputBox(props) {
       setText("");
     };
 
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && text) {
+      // 조합 문자(한글, 한문 등)의 경우 이벤트가 두 번 발생하여 끝 글자가 출력되는 이슈가 있다.
+      // 브라우저의 nativeEvent에서 isComposing을 확인하여 조합 문자인지 구분하고 이를 다룰 수 있다.
+      if (e.nativeEvent.isComposing) return;
+
       let newId = window.self.crypto.randomUUID();
       let data = { id: newId, text, checked: false };
       props.setTodoList(props.todoList.concat(data));
